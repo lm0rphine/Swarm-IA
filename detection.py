@@ -27,17 +27,13 @@ class user_app_callback_class(app_callback_class):
 # User-defined callback function
 # -----------------------------------------------------------------------------------------------
 def app_callback(pad, info, user_data):
-    print("Callback triggered.")  # Debugging line
-
     # Get the GstBuffer from the probe info
     buffer = info.get_buffer()
     if buffer is None:
-        print("Buffer is None.")
         return Gst.PadProbeReturn.OK
 
     # Using the user_data to count the number of frames
     user_data.increment()
-    print(f"Frame count: {user_data.get_count()}")  # Debugging line
 
     # Get the caps from the pad
     format, width, height = get_caps_from_pad(pad)
@@ -56,12 +52,11 @@ def app_callback(pad, info, user_data):
     filter_count = 0
     for detection in detections:
         label = detection.get_label()
-        confidence = detection.get_confidence()
-        print(f"Detection found - Label: {label}, Confidence: {confidence:.2f}")  # Debugging line
         if label == "filtre":  # Only count "filtre" labels
             filter_count += 1
 
-    print(f"Filters present: {filter_count}")  # Debugging line
+    # Print the count of filters detected
+    print(f"Filters present: {filter_count}")
 
     if user_data.use_frame and frame is not None:
         # Display the count of filters detected on the frame
