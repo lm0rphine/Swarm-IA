@@ -78,8 +78,8 @@ def app_callback(pad, info, user_data):
         label = detection.get_label()
         if label == "filtre":  # Only check "filtre" labels
             bbox = detection.get_bbox()
-            x_center = (bbox[0] + bbox[2]) // 2
-            y_center = (bbox[1] + bbox[3]) // 2
+            x_center = (bbox.xmin() + bbox.xmax()) // 2
+            y_center = (bbox.ymin() + bbox.ymax()) // 2
 
             # Determine which region the center point falls into
             for region_num, (x_min, y_min, x_max, y_max) in regions.items():
