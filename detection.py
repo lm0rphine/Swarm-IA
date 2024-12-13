@@ -32,7 +32,7 @@ def app_callback(pad, info, user_data):
     if buffer is None:
         return Gst.PadProbeReturn.OK
 
-    # Using the user_data to count the number of frames
+    # Increment the frame count
     user_data.increment()
 
     # Get the caps from the pad
@@ -55,17 +55,27 @@ def app_callback(pad, info, user_data):
         if label == "filtre":  # Only count "filtre" labels
             filter_count += 1
 
-    # Print the count of filters detected
-    print(f"Filters present: {filter_count}")
+    # Show the filter count in a separate window
+    count_window = np.zeros((300, 600, 3), dtype=np.uint8)  # Black background
+    cv2.putText(
+        count_window,
+        f"Filters: {filter_count}",
+        (50, 150),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        3,  # Font size
+        (0, 0, 255),  # Red color
+        5,  # Thickness
+        cv2.LINE_AA,
+    )
+    cv2.imshow("Filter Count", count_window)
 
+    # Optionally display the video frame
     if user_data.use_frame and frame is not None:
-        # Display the count of filters detected on the frame
-        cv2.putText(frame, f"Filters present: {filter_count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, f"{user_data.new_function()} {user_data.new_variable}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        # Convert the frame to BGR
+        # Convert the frame to BGR for OpenCV
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         cv2.imshow("Detection", frame)
-        cv2.waitKey(1)  # Necessary for OpenCV to display the frame
+
+    cv2.waitKey(1)  # Necessary for OpenCV to display the frames
 
     return Gst.PadProbeReturn.OK
 
@@ -73,8 +83,13 @@ def app_callback(pad, info, user_data):
 # Main function
 # -----------------------------------------------------------------------------------------------
 if __name__ == "__main__":
+    # Initialize GStreamer
+    Gst.init(None)
+
     # Create an instance of the user app callback class
     user_data = user_app_callback_class()
     user_data.use_frame = True  # Ensure this is True to enable frame processing
+
+    # Start the GStreamer pipeline
     app = GStreamerDetectionApp(app_callback, user_data)
     app.run()
