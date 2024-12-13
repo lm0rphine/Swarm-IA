@@ -20,7 +20,7 @@ class user_app_callback_class(app_callback_class):
         super().__init__()
 
 # -----------------------------------------------------------------------------------------------
-# Define Custom Regions with New Coordinates
+# Define Regions for Positions
 # -----------------------------------------------------------------------------------------------
 def define_regions():
     """
@@ -70,13 +70,17 @@ def app_callback(pad, info, user_data):
     roi = hailo.get_roi_from_buffer(buffer)
     detections = roi.get_objects_typed(hailo.HAILO_DETECTION)
 
+    # Initialize filter count
+    filter_count = 0
+
     # Check detected objects and their positions
     for detection in detections:
         label = detection.get_label()
         if label == "filtre":  # Only check "filtre" labels
-            bbox = detection.get_bbox()
+            filter_count += 1
 
-            # Get the bounding box coordinates in pixels
+            # Get bounding box in pixels
+            bbox = detection.get_bbox()
             x_min = int(bbox.xmin() * width)
             y_min = int(bbox.ymin() * height)
             x_max = int(bbox.xmax() * width)
@@ -86,11 +90,14 @@ def app_callback(pad, info, user_data):
             x_center = (x_min + x_max) // 2
             y_center = (y_min + y_max) // 2
 
-            # Determine which region the center point falls into
+            # Determine which region the center falls into
             for region_num, (rx_min, ry_min, rx_max, ry_max) in regions.items():
                 if rx_min <= x_center <= rx_max and ry_min <= y_center <= ry_max:
                     print(f"Position {region_num} occupied by Filtre")
-                    break  # No need to check other regions once matched
+                    break  # Stop checking other regions once matched
+
+    # Print the total count of filters detected
+    print(f"Filters present: {filter_count}")
 
     # Draw the regions on the frame for visualization
     if user_data.use_frame and frame is not None:
@@ -107,7 +114,10 @@ def app_callback(pad, info, user_data):
                 (0, 255, 0),
                 2,
             )
-        # Display the frame
+        # Display the count of filters on the frame
+        cv2.putText(frame, f"Filters present: {filter_count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+        # Convert the frame to BGR and display it
         frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         cv2.imshow("Detection Output", frame_bgr)
         cv2.waitKey(1)
