@@ -15,7 +15,6 @@ from detection_pipeline import GStreamerDetectionApp
 # -----------------------------------------------------------------------------------------------
 # User-defined class to be used in the callback function
 # -----------------------------------------------------------------------------------------------
-# Inheritance from the app_callback_class
 class user_app_callback_class(app_callback_class):
     def __init__(self):
         super().__init__()
@@ -27,18 +26,18 @@ class user_app_callback_class(app_callback_class):
 # -----------------------------------------------------------------------------------------------
 # User-defined callback function
 # -----------------------------------------------------------------------------------------------
-
-# This is the callback function that will be called when data is available from the pipeline
 def app_callback(pad, info, user_data):
+    print("Callback triggered.")  # Debugging line
+
     # Get the GstBuffer from the probe info
     buffer = info.get_buffer()
-    # Check if the buffer is valid
     if buffer is None:
+        print("Buffer is None.")
         return Gst.PadProbeReturn.OK
 
     # Using the user_data to count the number of frames
     user_data.increment()
-    string_to_print = f"Frame count: {user_data.get_count()}\n"
+    print(f"Frame count: {user_data.get_count()}")  # Debugging line
 
     # Get the caps from the pad
     format, width, height = get_caps_from_pad(pad)
@@ -57,26 +56,30 @@ def app_callback(pad, info, user_data):
     filter_count = 0
     for detection in detections:
         label = detection.get_label()
-        bbox = detection.get_bbox()
         confidence = detection.get_confidence()
-        if label == "filtre":  # Check if the label matches "filtre"
+        print(f"Detection found - Label: {label}, Confidence: {confidence:.2f}")  # Debugging line
+        if label == "filtre":  # Only count "filtre" labels
             filter_count += 1
-            string_to_print += f"Detection: {label} {confidence:.2f}\n"
 
-    if user_data.use_frame:
+    print(f"Filters present: {filter_count}")  # Debugging line
+
+    if user_data.use_frame and frame is not None:
         # Display the count of filters detected on the frame
         cv2.putText(frame, f"Filters present: {filter_count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        # Example of how to use the new_variable and new_function from the user_data
         cv2.putText(frame, f"{user_data.new_function()} {user_data.new_variable}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         # Convert the frame to BGR
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        user_data.set_frame(frame)
+        cv2.imshow("Detection", frame)
+        cv2.waitKey(1)  # Necessary for OpenCV to display the frame
 
-    print(string_to_print)
     return Gst.PadProbeReturn.OK
 
+# -----------------------------------------------------------------------------------------------
+# Main function
+# -----------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     # Create an instance of the user app callback class
     user_data = user_app_callback_class()
+    user_data.use_frame = True  # Ensure this is True to enable frame processing
     app = GStreamerDetectionApp(app_callback, user_data)
     app.run()
