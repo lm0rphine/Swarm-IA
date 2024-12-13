@@ -20,26 +20,25 @@ class user_app_callback_class(app_callback_class):
         super().__init__()
 
 # -----------------------------------------------------------------------------------------------
-# Define Regions with Provided Coordinates
+# Define Custom Regions with New Coordinates
 # -----------------------------------------------------------------------------------------------
-def define_regions(frame_width, frame_height):
+def define_regions():
     """
-    Define custom regions manually based on provided coordinates.
-    The coordinates are normalized to the frame dimensions if necessary.
+    Define custom regions manually based on the provided rectangles.
     """
     regions = {
-        1: (414, 98, 656, 307),
-        2: (775, 93, 1028, 321),
-        3: (1150, 101, 1396, 332),
-        4: (1515, 117, 1768, 339),
-        5: (385, 452, 644, 689),
-        6: (759, 450, 1019, 695),
-        7: (1155, 454, 1423, 703),
-        8: (1533, 461, 1771, 705),
-        9: (352, 843, 617, 1080),
-        10: (760, 841, 1025, 1090),
-        11: (1141, 839, 1405, 1087),
-        12: (1536, 833, 1788, 1089),
+        1: (100, 100, 250, 250),
+        2: (300, 100, 450, 250),
+        3: (500, 100, 650, 250),
+        4: (700, 100, 850, 250),
+        5: (100, 300, 250, 450),
+        6: (300, 300, 450, 450),
+        7: (500, 300, 650, 450),
+        8: (700, 300, 850, 450),
+        9: (100, 500, 250, 650),
+        10: (300, 500, 450, 650),
+        11: (500, 500, 650, 650),
+        12: (700, 500, 850, 650),
     }
     return regions
 
@@ -64,8 +63,8 @@ def app_callback(pad, info, user_data):
         # Get video frame
         frame = get_numpy_from_buffer(buffer, format, width, height)
 
-    # Define the 12 regions based on provided coordinates
-    regions = define_regions(width, height)
+    # Use predefined regions
+    regions = define_regions()
 
     # Get the detections from the buffer
     roi = hailo.get_roi_from_buffer(buffer)
