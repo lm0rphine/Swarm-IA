@@ -55,14 +55,11 @@ def app_callback(pad, info, user_data):
         if label == "filtre":  # Only count "filtre" labels
             filter_count += 1
 
-    # Print the count of filters detected
-    print(f"Filters present: {filter_count}")
-
+    # Display the count of filters on the video frame
     if user_data.use_frame and frame is not None:
-        # Display the count of filters detected on the frame
+        # Overlay the count of filters detected
         cv2.putText(frame, f"Filters present: {filter_count}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, f"{user_data.new_function()} {user_data.new_variable}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        # Convert the frame to BGR
+        # Convert the frame to BGR for OpenCV
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         cv2.imshow("Detection", frame)
         cv2.waitKey(1)  # Necessary for OpenCV to display the frame
