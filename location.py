@@ -20,29 +20,26 @@ class user_app_callback_class(app_callback_class):
         super().__init__()
 
 # -----------------------------------------------------------------------------------------------
-# Define 12 Regions on the Frame
+# Define Custom Regions Based on Provided Coordinates
 # -----------------------------------------------------------------------------------------------
-def define_regions(frame_width, frame_height):
+def define_regions():
     """
-    Divide the frame into 12 equal regions (4 columns x 3 rows).
-    Returns a dictionary mapping region numbers to bounding box coordinates.
+    Define custom regions manually based on the provided coordinates.
     """
-    regions = {}
-    cols = 4  # Divide width into 4 columns
-    rows = 3  # Divide height into 3 rows
-    col_width = frame_width // cols
-    row_height = frame_height // rows
-
-    region_num = 1
-    for row in range(rows):
-        for col in range(cols):
-            x_min = col * col_width
-            y_min = row * row_height
-            x_max = x_min + col_width
-            y_max = y_min + row_height
-            regions[region_num] = (x_min, y_min, x_max, y_max)
-            region_num += 1
-
+    regions = {
+        1: (414, 98, 656, 307),
+        2: (775, 93, 1028, 321),
+        3: (1150, 101, 1396, 332),
+        4: (1515, 117, 1768, 339),
+        5: (385, 452, 644, 689),
+        6: (759, 450, 1019, 695),
+        7: (1155, 454, 1423, 703),
+        8: (1533, 461, 1771, 705),
+        9: (352, 843, 617, 1080),
+        10: (760, 841, 1025, 1090),
+        11: (1141, 839, 1405, 1087),
+        12: (1536, 833, 1788, 1089),
+    }
     return regions
 
 # -----------------------------------------------------------------------------------------------
@@ -66,8 +63,8 @@ def app_callback(pad, info, user_data):
         # Get video frame
         frame = get_numpy_from_buffer(buffer, format, width, height)
 
-    # Define the 12 regions based on the frame dimensions
-    regions = define_regions(width, height)
+    # Use predefined regions
+    regions = define_regions()
 
     # Get the detections from the buffer
     roi = hailo.get_roi_from_buffer(buffer)
