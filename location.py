@@ -1,5 +1,9 @@
-import cv2
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst, GLib
+import os
 import numpy as np
+import cv2
 import hailo
 from hailo_rpi_common import (
     get_caps_from_pad,
@@ -8,16 +12,19 @@ from hailo_rpi_common import (
 )
 from detection_pipeline import GStreamerDetectionApp
 
-
+# -----------------------------------------------------------------------------------------------
+# User-defined class to be used in the callback function
+# -----------------------------------------------------------------------------------------------
 class user_app_callback_class(app_callback_class):
     def __init__(self):
         super().__init__()
-        self.target_object = "filtre"  # Object type to detect
 
-
+# -----------------------------------------------------------------------------------------------
+# Define 12 Regions on the Frame
+# -----------------------------------------------------------------------------------------------
 def define_regions(frame_width, frame_height):
     """
-    Divide the frame into 12 equal regions.
+    Divide the frame into 12 equal regions (4 columns x 3 rows).
     Returns a dictionary mapping region numbers to bounding box coordinates.
     """
     regions = {}
@@ -38,17 +45,25 @@ def define_regions(frame_width, frame_height):
 
     return regions
 
-
+# -----------------------------------------------------------------------------------------------
+# User-defined callback function
+# -----------------------------------------------------------------------------------------------
 def app_callback(pad, info, user_data):
     # Get the GstBuffer from the probe info
     buffer = info.get_buffer()
     if buffer is None:
         return Gst.PadProbeReturn.OK
 
+    # Using the user_data to count the number of frames
+    user_data.increment()
+
     # Get the caps from the pad
     format, width, height = get_caps_from_pad(pad)
+
+    # If the user_data.use_frame is set to True, we can get the video frame from the buffer
     frame = None
     if user_data.use_frame and format is not None and width is not None and height is not None:
+        # Get video frame
         frame = get_numpy_from_buffer(buffer, format, width, height)
 
     # Define the 12 regions based on the frame dimensions
@@ -58,24 +73,21 @@ def app_callback(pad, info, user_data):
     roi = hailo.get_roi_from_buffer(buffer)
     detections = roi.get_objects_typed(hailo.HAILO_DETECTION)
 
-    # Parse detections and check positions
+    # Check detected objects and their positions
     for detection in detections:
         label = detection.get_label()
-        confidence = detection.get_confidence()
-        bbox = detection.get_bbox()
-
-        if label == user_data.target_object and confidence > 0.4:  # Adjust confidence threshold if necessary
-            # Calculate the center of the detected object
+        if label == "filtre":  # Only check "filtre" labels
+            bbox = detection.get_bbox()
             x_center = (bbox[0] + bbox[2]) // 2
             y_center = (bbox[1] + bbox[3]) // 2
 
             # Determine which region the center point falls into
             for region_num, (x_min, y_min, x_max, y_max) in regions.items():
                 if x_min <= x_center <= x_max and y_min <= y_center <= y_max:
-                    print(f"Position {region_num} occupied by {label.capitalize()}")
+                    print(f"Position {region_num} occupied by Filtre")
 
     # Draw the regions on the frame for visualization
-    if frame is not None:
+    if user_data.use_frame and frame is not None:
         for region_num, (x_min, y_min, x_max, y_max) in regions.items():
             # Draw region boundaries
             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
@@ -96,9 +108,12 @@ def app_callback(pad, info, user_data):
 
     return Gst.PadProbeReturn.OK
 
-
+# -----------------------------------------------------------------------------------------------
+# Main function
+# -----------------------------------------------------------------------------------------------
 if __name__ == "__main__":
+    # Create an instance of the user app callback class
     user_data = user_app_callback_class()
-    user_data.use_frame = True  # Enable frame processing
+    user_data.use_frame = True  # Ensure this is True to enable frame processing
     app = GStreamerDetectionApp(app_callback, user_data)
     app.run()
