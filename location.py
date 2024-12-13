@@ -78,24 +78,33 @@ def app_callback(pad, info, user_data):
         label = detection.get_label()
         if label == "filtre":  # Only check "filtre" labels
             bbox = detection.get_bbox()
-            x_center = (bbox.xmin() + bbox.xmax()) // 2
-            y_center = (bbox.ymin() + bbox.ymax()) // 2
+
+            # Get the bounding box coordinates in pixels
+            x_min = int(bbox.xmin() * width)
+            y_min = int(bbox.ymin() * height)
+            x_max = int(bbox.xmax() * width)
+            y_max = int(bbox.ymax() * height)
+
+            # Calculate the center point of the detection
+            x_center = (x_min + x_max) // 2
+            y_center = (y_min + y_max) // 2
 
             # Determine which region the center point falls into
-            for region_num, (x_min, y_min, x_max, y_max) in regions.items():
-                if x_min <= x_center <= x_max and y_min <= y_center <= y_max:
+            for region_num, (rx_min, ry_min, rx_max, ry_max) in regions.items():
+                if rx_min <= x_center <= rx_max and ry_min <= y_center <= ry_max:
                     print(f"Position {region_num} occupied by Filtre")
+                    break  # No need to check other regions once matched
 
     # Draw the regions on the frame for visualization
     if user_data.use_frame and frame is not None:
-        for region_num, (x_min, y_min, x_max, y_max) in regions.items():
+        for region_num, (rx_min, ry_min, rx_max, ry_max) in regions.items():
             # Draw region boundaries
-            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+            cv2.rectangle(frame, (rx_min, ry_min), (rx_max, ry_max), (255, 0, 0), 2)
             # Label the regions
             cv2.putText(
                 frame,
                 f"{region_num}",
-                (x_min + 10, y_min + 30),
+                (rx_min + 10, ry_min + 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
                 (0, 255, 0),
