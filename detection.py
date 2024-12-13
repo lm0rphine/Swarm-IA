@@ -32,7 +32,7 @@ def app_callback(pad, info, user_data):
     if buffer is None:
         return Gst.PadProbeReturn.OK
 
-    # Increment the frame count
+    # Using the user_data to count the number of frames
     user_data.increment()
 
     # Get the caps from the pad
@@ -55,28 +55,15 @@ def app_callback(pad, info, user_data):
         if label == "filtre":  # Only count "filtre" labels
             filter_count += 1
 
-    # Show the filter count in a separate window
-    count_window = np.zeros((300, 600, 3), dtype=np.uint8)  # Black background
-    cv2.putText(
-        count_window,
-        f"Filters: {filter_count}",
-        (50, 150),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        3,  # Font size
-        (0, 0, 255),  # Red color
-        5,  # Thickness
-        cv2.LINE_AA,
-    )
-    cv2.imshow("Filter Count", count_window)
-
-    # Optionally display the video frame
+    # Display the filter count on the video frame in red
     if user_data.use_frame and frame is not None:
+        # Overlay the count of filters detected
+        cv2.putText(frame, f"Filters detected: {filter_count}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 4)
         # Convert the frame to BGR for OpenCV
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        cv2.imshow("Detection", frame)
+        cv2.imshow("Detection Output", frame)
 
-    cv2.waitKey(1)  # Necessary for OpenCV to display the frames
-
+    cv2.waitKey(1)  # Necessary for OpenCV to display the frame
     return Gst.PadProbeReturn.OK
 
 # -----------------------------------------------------------------------------------------------
