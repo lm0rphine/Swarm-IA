@@ -1,7 +1,7 @@
 # zones.py
 
 # Zone de détection des movers en phase active (minicycle)
-crop_region = (490, 260, 810, 580)  # x_min, y_min, x_max, y_max
+crop_region = (212, 310, 474, 471)  # x_min, y_min, x_max, y_max
 
 # Coordonnées précises des 12 positions de filtre sur la plaque blanche (3x4)
 plate_positions = [
