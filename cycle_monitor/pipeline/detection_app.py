@@ -11,9 +11,12 @@ from gi.repository import Gst
 
 from .state_manager import state
 from .zones import crop_region, plate_positions
-from .utils import bbox_in_crop, bbox_in_zone, assign_mover_ids
+from .utils import bbox_in_crop, bbox_in_zone
 from .inventory_manager import update_inventory, update_heatmap
 from .anomaly_checker import check_anomalies
+from .mover_tracker import MoverTracker
+
+tracker = MoverTracker()
 
 class user_app_callback_class:
     def __init__(self):
@@ -83,7 +86,6 @@ def app_callback(pad, info, user_data):
     print(f"🧪 Filtres sur la plaque : {filters_on_plate}/12")
     update_heatmap(filter_bboxes, plate_positions)
 
-    # INIT PHASE
     if state["init_phase"]:
         if filters_on_plate < 12 and len(mover_empty_crop_bboxes) == 0 and len(mover_full_crop_bboxes) >= 4:
             state["init_loaded_groups"] += 1
@@ -93,7 +95,6 @@ def app_callback(pad, info, user_data):
                 print("🟢 Début du cycle normal !")
         return Gst.PadProbeReturn.OK
 
-    # Phase transitions (cycle actif)
     if len(mover_full_crop_bboxes) >= 4 and state["phase"] == "idle":
         state["phase"] = "decharging"
         state["start_decharge"] = now
@@ -134,16 +135,15 @@ def app_callback(pad, info, user_data):
                 full_cycle_time = now - state["cycle_start_time"]
                 print(f"✅✅ Cycle complet #{state['cycle_count']} terminé. Durée : {full_cycle_time:.2f} sec\n")
 
-    # Anomalies
     anomalies = check_anomalies(state, filters_on_plate, mover_full_crop_bboxes, mover_empty_crop_bboxes, user_data.last_activity_time)
     for anomaly in anomalies:
         print("❗", anomaly)
 
-    # Annotate movers
     if user_data.use_frame and frame is not None:
         cv2.putText(frame, user_data.new_function(), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        assigned_current = assign_mover_ids(mover_full_bboxes + mover_empty_bboxes, state["mover_number_map"]["current"])
-        for mover_id, bbox in assigned_current.items():
+        mover_bboxes = mover_full_bboxes + mover_empty_bboxes
+        tracked = tracker.match_bboxes(mover_bboxes)
+        for mover_id, bbox in tracked.items():
             x_min, y_min = int(bbox[0]), int(bbox[1])
             cv2.putText(frame, f"#{mover_id}", (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
             cv2.rectangle(frame, (x_min, int(bbox[1])), (int(bbox[2]), int(bbox[3])), (255, 0, 0), 2)
